@@ -1,0 +1,221 @@
+.settings-page {
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px;
+}
+
+.settings-card {
+  background: white;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+}
+
+.settings-card h1 {
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.section {
+  margin-bottom: 18px;
+}
+
+.section label {
+  display: block;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.section input,
+.section select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.section input:disabled {
+  background: #f3f4f6;
+}
+
+.readonly {
+  padding: 10px 12px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.save-btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.save-btn:hover {
+  transform: translateY(-1px);
+}
+
+.system-note {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 14px;
+}
+
+.settings-loading {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.settings-page {
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+  background: linear-gradient(135deg, #f4f6ff, #eef2ff);
+  min-height: calc(100vh - 64px);
+}
+
+.settings-card {
+  width: 100%;
+  max-width: 620px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+.settings-card h1 {
+  margin-bottom: 28px;
+  font-size: 26px;
+  color: #1f2937;
+}
+
+.section {
+  margin-bottom: 18px;
+}
+
+.section label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #374151;
+}
+
+.section input,
+.section select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
+}
+
+.readonly {
+  padding: 12px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.plan-badge.free {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.plan-badge.pro {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.plan-badge.enterprise {
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.subscription-note {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 14px;
+  border-left: 5px solid #fb923c;
+}
+
+.system-note {
+  margin-top: 20px;
+  padding: 14px;
+  background: #fef3c7;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 14px;
+}
+
+.settings-loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 18px;
+  color: #6b7280;
+}

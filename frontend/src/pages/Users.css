@@ -1,0 +1,109 @@
+.users-page {
+  padding: 24px;
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.filters input,
+.filters select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.user-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.user-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-card h3 {
+  margin: 0;
+}
+
+.user-card .email {
+  color: #4b5563;
+  font-size: 14px;
+  margin: 6px 0 12px;
+}
+
+.user-card .meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.active {
+  color: #16a34a;
+}
+
+.inactive {
+  color: #dc2626;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.badge.tenant_admin {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.badge.user {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #4f46e5;
+  color: white;
+}
+
+.actions button.danger {
+  background: #dc2626;
+}
+
+.empty {
+  margin-top: 40px;
+  text-align: center;
+  color: #6b7280;
+}
