@@ -1,163 +1,243 @@
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
-import api from "../api/client";
-import DashboardNavbar from "../components/DashboardNavbar";
-import TaskModal from "../components/TaskModal";
-import "./ProjectDetails.css";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { projectAPI, taskAPI } from '../services/api';
 
-export default function ProjectDetails() {
+const ProjectDetails = () => {
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    status: "",
-    priority: "",
-    assignedto: ""
-  });
-
+  const [error, setError] = useState('');
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-
-  const reloadTasks = useCallback(async () => {
-    try {
-      const res = await api.get(`/projects/${projectId}/tasks`, { params: filters });
-      setTasks(res.data.data.tasks || []);
-    } catch (err) {
-      console.error("Failed to reload tasks", err);
-      alert(err.response?.data?.message || "Operation failed");
-    }
-  }, [projectId, filters]);
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    assignedTo: '',
+    dueDate: '',
+  });
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    async function loadInitialData() {
-      try {
-        setLoading(true);
-        //  Get current user
-        const meRes = await api.get("/auth/me");
-        const user = meRes.data.data;
+    loadProject();
+    loadTasks();
+  }, [projectId, statusFilter]);
 
-        //  Load projects
-        const projectRes = user.role === "super_admin"
-            ? await api.get("/projects/all")
-            : await api.get("/projects");
-
-        const projects = projectRes.data.data.projects || projectRes.data.data || [];
-        const found = projects.find(p => p.id === projectId);
-
-        if (!found) throw new Error("Project not found");
-        setProject(found);
-
-        //  Load tasks
-        await reloadTasks();
-      } catch (err) {
-        console.error("Failed to load project details", err);
-        alert(err.response?.data?.message || "Operation failed");
-      } finally {
-        setLoading(false);
+  const loadProject = async () => {
+    try {
+      const response = await projectAPI.listProjects();
+      const foundProject = response.data.data.projects.find(p => p.id === projectId);
+      if (foundProject) {
+        setProject(foundProject);
+      } else {
+        setError('Project not found');
       }
-    }
-
-    loadInitialData();
-  }, [projectId, reloadTasks]);
-
-  async function updateStatus(taskId, status) {
-    try {
-      await api.patch(`/tasks/${taskId}/status`, { status });
-      reloadTasks();
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
-      alert("Failed to update status");
+      setError(err.response?.data?.message || 'Failed to load project');
     }
+  };
+
+  const loadTasks = async () => {
+    try {
+      const params = statusFilter ? { status: statusFilter } : {};
+      const response = await taskAPI.listTasks(projectId, params);
+      setTasks(response.data.data.tasks);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTaskSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingTask) {
+        await taskAPI.updateTask(editingTask.id, taskFormData);
+      } else {
+        await taskAPI.createTask(projectId, taskFormData);
+      }
+      setShowTaskModal(false);
+      setEditingTask(null);
+      setTaskFormData({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' });
+      loadTasks();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save task');
+    }
+  };
+
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      await taskAPI.updateTaskStatus(taskId, newStatus);
+      loadTasks();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update task status');
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setTaskFormData({
+      title: task.title,
+      description: task.description || '',
+      priority: task.priority,
+      assignedTo: task.assignedTo?.id || '',
+      dueDate: task.dueDate || '',
+    });
+    setShowTaskModal(true);
+  };
+
+  if (loading) {
+    return <div className="container">Loading...</div>;
   }
 
-  async function deleteTask(taskId) {
-    if (!window.confirm("Delete task?")) return;
-    try {
-      await api.delete(`/tasks/${taskId}`);
-      reloadTasks();
-    } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
-      alert("Failed to delete task");
-    }
+  if (error && !project) {
+    return <div className="container"><div className="error">{error}</div></div>;
   }
-
-  if (loading) return <div className="loading">Loading project...</div>;
-  if (!project) return <div className="error">Project not found</div>;
 
   return (
-    <>
-      <DashboardNavbar />
-      <div className="project-details">
-        <div className="project-header">
-          <div>
+    <div className="container">
+      <button className="btn btn-secondary" onClick={() => navigate('/projects')} style={{ marginBottom: '20px' }}>
+        ← Back to Projects
+      </button>
+
+      {project && (
+        <>
+          <div className="card" style={{ marginBottom: '20px' }}>
             <h1>{project.name}</h1>
-            <span className={`badge ${project.status}`}>{project.status}</span>
-            <p className="description">{project.description || "No description"}</p>
+            <p style={{ color: '#666', marginBottom: '10px' }}>{project.description || 'No description'}</p>
+            <div>
+              <span className={`badge badge-${project.status === 'active' ? 'success' : 'warning'}`}>
+                {project.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2>Tasks</h2>
+              <button className="btn btn-primary" onClick={() => { setEditingTask(null); setTaskFormData({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' }); setShowTaskModal(true); }}>
+                Add Task
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label>Filter by Status: </label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '5px', marginLeft: '10px' }}>
+                <option value="">All</option>
+                <option value="todo">Todo</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            {tasks.length === 0 ? (
+              <p>No tasks yet. Create your first task!</p>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tasks.map(task => (
+                    <tr key={task.id}>
+                      <td>{task.title}</td>
+                      <td>
+                        <span className={`badge badge-${task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info'}`}>
+                          {task.priority}
+                        </span>
+                      </td>
+                      <td>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
+                          style={{ padding: '4px', fontSize: '12px' }}
+                        >
+                          <option value="todo">Todo</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </td>
+                      <td>{task.assignedTo ? task.assignedTo.fullName : 'Unassigned'}</td>
+                      <td>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</td>
+                      <td>
+                        <button className="btn btn-secondary" onClick={() => handleEditTask(task)} style={{ padding: '5px 10px', fontSize: '12px' }}>
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {showTaskModal && (
+        <div className="modal" onClick={() => setShowTaskModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingTask ? 'Edit Task' : 'Create Task'}</h2>
+              <button className="close-btn" onClick={() => setShowTaskModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleTaskSubmit}>
+              <div className="form-group">
+                <label>Title</label>
+                <input
+                  type="text"
+                  value={taskFormData.title}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  value={taskFormData.description}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
+                  rows="4"
+                />
+              </div>
+              <div className="form-group">
+                <label>Priority</label>
+                <select
+                  value={taskFormData.priority}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value })}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Due Date</label>
+                <input
+                  type="date"
+                  value={taskFormData.dueDate}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button type="submit" className="btn btn-primary">Save</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowTaskModal(false)}>Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
-
-        <div className="filters">
-          <select onChange={e => setFilters({ ...filters, status: e.target.value })}>
-            <option value="true">All Status</option>
-            <option value="todo">Todo</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-
-          <select onChange={e => setFilters({ ...filters, priority: e.target.value })}>
-            <option value="true">All Priority</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-
-        <div className="tasks-header">
-          <h2>Tasks</h2>
-          <button className="primary" onClick={() => { setEditingTask(null); setShowTaskModal(true); }}>
-            + Add Task
-          </button>
-        </div>
-
-        <div className="task-list">
-          {tasks.length === 0 ? (
-            <p>No tasks found</p>
-          ) : (
-            tasks.map(task => (
-              <div key={task.id} className="task-card">
-                <div>
-                  <strong>{task.title}</strong>
-                  <div className="meta">
-                    <span className={`badge ${task.status}`}>{task.status}</span>
-                    <span className={`badge ${task.priority}`}>{task.priority}</span>
-                    {task.assignedto && <span>👤 {task.assignedto.fullName}</span>}
-                    {task.due_date && <span>📅 {task.due_date}</span>}
-                  </div>
-                </div>
-                <div className="task-actions">
-                  <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}>
-                    <option value="todo">Todo</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                  <button onClick={() => { setEditingTask(task); setShowTaskModal(true); }}>Edit</button>
-                  <button className="danger" onClick={() => deleteTask(task.id)}>Delete</button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {showTaskModal && (
-          <TaskModal
-            projectId={projectId}
-            task={editingTask}
-            onClose={() => setShowTaskModal(false)}
-            onSaved={reloadTasks} 
-          />
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
-}
+};
+
+export default ProjectDetails;
+

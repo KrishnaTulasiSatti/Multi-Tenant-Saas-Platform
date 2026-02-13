@@ -1,21 +1,30 @@
-# API Documentation – Multi-Tenant SaaS Platform
+# API Documentation
+## Multi-Tenant SaaS Platform
+
+Base URL: `http://localhost:5000/api` (or your backend URL)
+
+All APIs return JSON responses with consistent format:
+- Success: `{success: true, message?: string, data?: object}`
+- Error: `{success: false, message: string}`
 
 ## Authentication
 
-### Authentication Method
-- JWT (JSON Web Token)
-- Token must be sent in header: Authorization: Bearer <token>
+Most endpoints require authentication via JWT token in Authorization header:
+```
+Authorization: Bearer <token>
+```
 
 ---
 
-## 1. Auth APIs
+## 1. Authentication Endpoints
 
-### API 1. Tenant Registration
-- **Method:** POST
-- **Endpoint:** /api/auth/register-tenant
-- **Auth Required:** No
+### 1.1 Register Tenant
 
-**Request**
+**Endpoint:** `POST /api/auth/register-tenant`
+
+**Authentication:** None (public)
+
+**Request Body:**
 ```json
 {
   "tenantName": "Test Company Alpha",
@@ -26,270 +35,725 @@
 }
 ```
 
-**Response** `200 OK`
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "Tenant registered successfully",
+  "data": {
+    "tenantId": "uuid",
+    "subdomain": "testalpha",
+    "adminUser": {
+      "id": "uuid",
+      "email": "admin@testalpha.com",
+      "fullName": "Alpha Admin",
+      "role": "tenant_admin"
+    }
+  }
+}
+```
 
-### API 2. Login
-- **Method:** POST
-- **Endpoint:** /api/auth/login
-- **Auth Required:** No
+**Error Responses:**
+- `400`: Validation errors
+- `409`: Subdomain or email already exists
 
-**Request**
+---
+
+### 1.2 User Login
+
+**Endpoint:** `POST /api/auth/login`
+
+**Authentication:** None (public)
+
+**Request Body:**
 ```json
 {
   "email": "admin@demo.com",
   "password": "Demo@123",
   "tenantSubdomain": "demo"
 }
-
 ```
 
-**Response** `200 OK`
-
-### API 3. Get Current User
-- **Method:** GET
-- **Endpoint:** /api/auth/me
-- **Auth Required:** Yes
-
-**Response** `200 OK`
-
-### API 4. Logout
-- **Method:** POST
-- **Endpoint:** /api/auth/logout
-- **Auth Required:** Yes
-
-**Response** `200 OK`
-
----
-
-## 2. Tenant APIs
-
-### API 5. Get Tenants Details
-- **Method:** GET
-- **Endpoint:** /api/tenants/:tenantId
-- **Auth Required:** Yes
-
-**Response** `200 OK`
-
-### API 6. Update Tenant
-- **Method:** PUT
-- **Endpoint:** /api/tenants/:tenantId
-- **Auth Required:** Yes
-
-**Request**
+**Success Response (200):**
 ```json
 {
-    "name": "Demo Company One"
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "admin@demo.com",
+      "fullName": "Demo Admin",
+      "role": "tenant_admin",
+      "tenantId": "uuid"
+    },
+    "token": "jwt-token-string",
+    "expiresIn": 86400
+  }
 }
 ```
 
-**Response** `200 OK`
-
-### API 7. List All Tenants
-- **Method:** GET
-- **Endpoint:** /api/tenants/
-- **Auth Required:** Yes
-- **Authorization:** super_admin ONLY
-
-**Response** `200 OK`
+**Error Responses:**
+- `401`: Invalid credentials
+- `404`: Tenant not found
+- `403`: Account suspended/inactive
 
 ---
 
-## 3. User APIs
+### 1.3 Get Current User
 
-### API 8. Add User to Tenant
-- **Method:** POST
-- **Endpoint:** /api/tenants/:tenantId/users
-- **Auth Required:** Yes
-- **Authorization:** tenant_admin only
+**Endpoint:** `GET /api/auth/me`
 
-**Request**
+**Authentication:** Required
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "admin@demo.com",
+    "fullName": "Demo Admin",
+    "role": "tenant_admin",
+    "isActive": true,
+    "tenant": {
+      "id": "uuid",
+      "name": "Demo Company",
+      "subdomain": "demo",
+      "subscriptionPlan": "pro",
+      "maxUsers": 25,
+      "maxProjects": 15
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `401`: Token invalid/expired/missing
+- `404`: User not found
+
+---
+
+### 1.4 Logout
+
+**Endpoint:** `POST /api/auth/logout`
+
+**Authentication:** Required
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+## 2. Tenant Management Endpoints
+
+### 2.1 Get Tenant Details
+
+**Endpoint:** `GET /api/tenants/:tenantId`
+
+**Authentication:** Required
+
+**Authorization:** User must belong to tenant OR be super_admin
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Demo Company",
+    "subdomain": "demo",
+    "status": "active",
+    "subscriptionPlan": "pro",
+    "maxUsers": 25,
+    "maxProjects": 15,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "stats": {
+      "totalUsers": 5,
+      "totalProjects": 3,
+      "totalTasks": 15
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `403`: Unauthorized access
+- `404`: Tenant not found
+
+---
+
+### 2.2 Update Tenant
+
+**Endpoint:** `PUT /api/tenants/:tenantId`
+
+**Authentication:** Required
+
+**Authorization:** tenant_admin OR super_admin
+
+**Request Body (tenant_admin can only update name):**
+```json
+{
+  "name": "Updated Company Name"
+}
+```
+
+**Request Body (super_admin can update all fields):**
+```json
+{
+  "name": "Updated Company Name",
+  "status": "active",
+  "subscriptionPlan": "enterprise",
+  "maxUsers": 100,
+  "maxProjects": 50
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Tenant updated successfully",
+  "data": {
+    "id": "uuid",
+    "name": "Updated Company Name",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `403`: Insufficient permissions
+- `404`: Tenant not found
+
+---
+
+### 2.3 List All Tenants
+
+**Endpoint:** `GET /api/tenants`
+
+**Authentication:** Required
+
+**Authorization:** super_admin ONLY
+
+**Query Parameters:**
+- `page` (integer, default: 1)
+- `limit` (integer, default: 10, max: 100)
+- `status` (enum, optional): Filter by status
+- `subscriptionPlan` (enum, optional): Filter by plan
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "tenants": [
+      {
+        "id": "uuid",
+        "name": "Demo Company",
+        "subdomain": "demo",
+        "status": "active",
+        "subscriptionPlan": "pro",
+        "totalUsers": 5,
+        "totalProjects": 3,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalTenants": 47,
+      "limit": 10
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `403`: Not super_admin
+
+---
+
+## 3. User Management Endpoints
+
+### 3.1 Add User to Tenant
+
+**Endpoint:** `POST /api/tenants/:tenantId/users`
+
+**Authentication:** Required
+
+**Authorization:** tenant_admin only
+
+**Request Body:**
 ```json
 {
   "email": "newuser@demo.com",
   "password": "NewUser@123",
-  "full_name": "New User",
+  "fullName": "New User",
   "role": "user"
 }
 ```
 
-**Response** `200 OK`
-
-### API 9. List Tenant Users
-- **Method:** GET
-- **Endpoint:** /api/tenants/:tenantId/users
-- **Auth Required:** Yes
-- **Authorization:** User must belong to this tenant
-
-**Response** `200 OK`
-
-### API 10. Update User
-- **Method:** PUT
-- **Endpoint:** /api/users/:userId
-- **Auth Required:** Yes
-- **Authorization:** tenant_admin OR self(limited fields)
-
-**Request**
+**Success Response (201):**
 ```json
 {
-  "full_name": "New User One",
+  "success": true,
+  "message": "User created successfully",
+  "data": {
+    "id": "uuid",
+    "email": "newuser@demo.com",
+    "fullName": "New User",
+    "role": "user",
+    "tenantId": "uuid",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
 }
 ```
 
-**Response** `200 OK`
-
-### API 11. Delete User
-- **Method:** DELETE
-- **Endpoint:** /api/users/:userId
-- **Auth Required:** Yes
-- **Authorization:** tenant_admin only
-
-**Response** `200 OK`
+**Error Responses:**
+- `403`: Subscription limit reached OR not authorized
+- `409`: Email already exists in this tenant
 
 ---
 
-## 4. Project APIs
+### 3.2 List Tenant Users
 
-### API 12. Create Project
-- **Method:** POST
-- **Endpoint:** /api/projects
-- **Auth Required:** Yes
+**Endpoint:** `GET /api/tenants/:tenantId/users`
 
-**Request**
+**Authentication:** Required
+
+**Authorization:** User must belong to tenant
+
+**Query Parameters:**
+- `search` (string, optional): Search by name or email
+- `role` (enum, optional): Filter by role
+- `page` (integer, default: 1)
+- `limit` (integer, default: 50, max: 100)
+
+**Success Response (200):**
 ```json
 {
-  "name": "Website Redesign Project",
-  "description": "Complete redesign of company website"
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "id": "uuid",
+        "email": "admin@demo.com",
+        "fullName": "Demo Admin",
+        "role": "tenant_admin",
+        "isActive": true,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "total": 5,
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "limit": 50
+    }
+  }
 }
 ```
 
-**Response** `200 OK`
+---
 
-### API 13. List Projects
-- **Method:** GET
-- **Endpoint:** /api/projects
-- **Auth Required:** Yes
+### 3.3 Update User
 
-**Response** `200 OK`
+**Endpoint:** `PUT /api/users/:userId`
 
-### API 14. Update Project
-- **Method:** PUT
-- **Endpoint:** /api/projects/:projectId
-- **Auth Required:** Yes
-- **Authorization:** tenant_admin OR project creator
+**Authentication:** Required
 
-**Request**
+**Authorization:** tenant_admin OR self (limited fields)
+
+**Request Body:**
 ```json
 {
-  "name": "Website Redesign Project - 2",
-  "description": "Complete redesign of company website - 2",
+  "fullName": "Updated Name",
+  "role": "tenant_admin",
+  "isActive": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "User updated successfully",
+  "data": {
+    "id": "uuid",
+    "fullName": "Updated Name",
+    "role": "user",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+---
+
+### 3.4 Delete User
+
+**Endpoint:** `DELETE /api/users/:userId`
+
+**Authentication:** Required
+
+**Authorization:** tenant_admin only
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+```
+
+**Error Responses:**
+- `403`: Cannot delete self OR not authorized
+- `404`: User not found
+
+---
+
+## 4. Project Management Endpoints
+
+### 4.1 Create Project
+
+**Endpoint:** `POST /api/projects`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "name": "Website Redesign Project",
+  "description": "Complete redesign of company website",
+  "status": "active"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "tenantId": "uuid",
+    "name": "Website Redesign Project",
+    "description": "Complete redesign of company website",
+    "status": "active",
+    "createdBy": "uuid",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `403`: Project limit reached
+
+---
+
+### 4.2 List Projects
+
+**Endpoint:** `GET /api/projects`
+
+**Authentication:** Required
+
+**Query Parameters:**
+- `status` (enum, optional): Filter by status
+- `search` (string, optional): Search by name
+- `page` (integer, default: 1)
+- `limit` (integer, default: 20, max: 100)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "projects": [
+      {
+        "id": "uuid",
+        "name": "Website Redesign",
+        "description": "Project description",
+        "status": "active",
+        "createdBy": {
+          "id": "uuid",
+          "fullName": "Admin User"
+        },
+        "taskCount": 5,
+        "completedTaskCount": 2,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "total": 3,
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "limit": 20
+    }
+  }
+}
+```
+
+---
+
+### 4.3 Update Project
+
+**Endpoint:** `PUT /api/projects/:projectId`
+
+**Authentication:** Required
+
+**Authorization:** tenant_admin OR project creator
+
+**Request Body:**
+```json
+{
+  "name": "Updated Project Name",
+  "description": "Updated description",
   "status": "archived"
 }
 ```
 
-**Response** `200 OK`
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Project updated successfully",
+  "data": {
+    "id": "uuid",
+    "name": "Updated Project Name",
+    "description": "Updated description",
+    "status": "archived",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
 
-### API 15. Delete Project
-- **Method:** DELETE
-- **Endpoint:** /api/projects/:projectId
-- **Auth Required:** Yes
-- **Authorization:** tenant_admin only OR project creator
-
-**Response** `200 OK`
+**Error Responses:**
+- `403`: Not authorized
+- `404`: Project not found
 
 ---
 
-## 5. Task APIs
+### 4.4 Delete Project
 
-### API 16. Create Task
-- **Method:** POST
-- **Endpoint:** /api/projects/:projectId/tasks
-- **Auth Required:** Yes
+**Endpoint:** `DELETE /api/projects/:projectId`
 
-**Request**
+**Authentication:** Required
+
+**Authorization:** tenant_admin OR project creator
+
+**Success Response (200):**
 ```json
 {
-  "title": "Design homepage mockup phase 2",
+  "success": true,
+  "message": "Project deleted successfully"
+}
+```
+
+**Error Responses:**
+- `403`: Not authorized
+- `404`: Project not found
+
+---
+
+## 5. Task Management Endpoints
+
+### 5.1 Create Task
+
+**Endpoint:** `POST /api/projects/:projectId/tasks`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "title": "Design homepage mockup",
   "description": "Create high-fidelity design",
-  "assignedTo": "33333333-3333-3333-3333-333333333333",
+  "assignedTo": "user-uuid-here",
   "priority": "high",
-  "dueDate": "2025-12-30"
+  "dueDate": "2024-07-15"
 }
 ```
 
-**Response** `200 OK`
-
-### API 17. List Project Tasks
-- **Method:** GET
-- **Endpoint:** /api/projects/:projectId/tasks
-- **Auth Required:** Yes
-
-**Response** `200 OK`
-
-### API 18. Update Task Status
-- **Method:** PATCH
-- **Endpoint:** /api/tasks/:taskId/status
-- **Auth Required:** Yes
-
-**Request**
+**Success Response (201):**
 ```json
 {
-  "status": "in_progress"
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "tenantId": "uuid",
+    "title": "Design homepage mockup",
+    "description": "Create high-fidelity design",
+    "status": "todo",
+    "priority": "high",
+    "assignedTo": "uuid",
+    "dueDate": "2024-07-15",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
 }
 ```
 
-**Response** `200 OK`
+**Error Responses:**
+- `403`: Project doesn't belong to user's tenant
+- `400`: assignedTo user doesn't belong to same tenant
 
-### API 19. Update Task
-- **Method:** PUT
-- **Endpoint:** /api/tasks/:taskId
-- **Auth Required:** Yes
+---
 
-**Request**
+### 5.2 List Project Tasks
+
+**Endpoint:** `GET /api/projects/:projectId/tasks`
+
+**Authentication:** Required
+
+**Query Parameters:**
+- `status` (enum, optional): Filter by status
+- `assignedTo` (uuid, optional): Filter by assigned user
+- `priority` (enum, optional): Filter by priority
+- `search` (string, optional): Search by title
+- `page` (integer, default: 1)
+- `limit` (integer, default: 50, max: 100)
+
+**Success Response (200):**
 ```json
 {
-  "priority": "high",
-  "dueDate": "2026-02-01"
+  "success": true,
+  "data": {
+    "tasks": [
+      {
+        "id": "uuid",
+        "title": "Design homepage",
+        "description": "Create design mockup",
+        "status": "in_progress",
+        "priority": "high",
+        "assignedTo": {
+          "id": "uuid",
+          "fullName": "John Doe",
+          "email": "john@demo.com"
+        },
+        "dueDate": "2024-07-01",
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "total": 5,
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "limit": 50
+    }
+  }
 }
 ```
 
-**Response** `200 OK`
+---
+
+### 5.3 Update Task Status
+
+**Endpoint:** `PATCH /api/tasks/:taskId/status`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "status": "completed"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "status": "completed",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
 
 ---
 
-## Super Admin APIs Extra
+### 5.4 Update Task
 
-### API 20. List All the Projects across all the tenants
-- **Method:** GET
-- **Endpoint:** /api/projects/all
-- **Auth Required:** Yes
-- **Authorization:** only super_admin
+**Endpoint:** `PUT /api/tasks/:taskId`
 
-**Response** `200 OK`
+**Authentication:** Required
 
-### API 21. List Project Tasks
-- **Method:** GET
-- **Endpoint:** /api/tasks/all
-- **Auth Required:** Yes
-- **Authorization:** only super_admin
+**Request Body:**
+```json
+{
+  "title": "Updated task title",
+  "description": "Updated description",
+  "status": "in_progress",
+  "priority": "high",
+  "assignedTo": "user-uuid-here",
+  "dueDate": "2024-08-01"
+}
+```
 
-**Response** `200 OK`
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Task updated successfully",
+  "data": {
+    "id": "uuid",
+    "title": "Updated task title",
+    "description": "Updated description",
+    "status": "in_progress",
+    "priority": "high",
+    "assignedTo": {
+      "id": "uuid",
+      "fullName": "John Doe",
+      "email": "john@demo.com"
+    },
+    "dueDate": "2024-08-01",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `403`: Task doesn't belong to user's tenant
+- `400`: assignedTo user doesn't belong to same tenant
+- `404`: Task not found
 
 ---
 
-## Health Check
+## Error Codes Summary
 
-### API 22. List Project Tasks
-- **Method:** GET
-- **Endpoint:** /api/health
-- **Auth Required:** No
-
-**Response** `200 OK`
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success (GET, PUT, PATCH, DELETE) |
+| 201 | Created (POST) |
+| 400 | Bad Request (validation errors) |
+| 401 | Unauthorized (invalid/missing token) |
+| 403 | Forbidden (insufficient permissions, limit reached) |
+| 404 | Not Found (resource doesn't exist) |
+| 409 | Conflict (duplicate email, subdomain) |
+| 500 | Internal Server Error |
 
 ---
 
-# Summary
+## Rate Limiting
 
-- Total APIs documented: 19+
-- Authentication explained
-- Request/response examples included
-- Meets evaluation requirements
+Currently not implemented. Can be added using express-rate-limit middleware.
+
+## Pagination
+
+List endpoints support pagination with `page` and `limit` query parameters. Response includes pagination metadata.
+
+## Filtering & Search
+
+Many list endpoints support:
+- **Filtering**: By status, role, priority, etc.
+- **Search**: Case-insensitive search by name, email, title, etc.
+
+---
+
+**Last Updated:** 2024-01-01
+

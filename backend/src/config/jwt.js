@@ -1,4 +1,7 @@
+require('dotenv').config();
+
 module.exports = {
-  JWT_SECRET: process.env.JWT_SECRET || 'dev_secret_key',
-  JWT_EXPIRES_IN: '24h'
+  secret: process.env.JWT_SECRET || 'your_jwt_secret_key_min_32_chars',
+  expiresIn: process.env.JWT_EXPIRES_IN || '24h',
 };
+

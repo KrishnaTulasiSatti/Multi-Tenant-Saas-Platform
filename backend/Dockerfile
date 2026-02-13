@@ -1,21 +1,22 @@
-# Use Node.js LTS
 FROM node:18-alpine
 
-RUN apk add --no-cache curl
-# Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy backend application code
+COPY backend/ .
 
-# Expose backend port
+# Copy database migrations and seeds
+COPY database ./database
+
+# Expose port
 EXPOSE 5000
 
-# Start server
-CMD ["npm", "start"]
+# Start server (migrations and seeds run automatically in server.js)
+CMD ["node", "src/server.js"]
+

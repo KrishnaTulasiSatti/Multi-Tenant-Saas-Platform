@@ -1,36 +1,46 @@
 {
-  "project": {
-    "name": "Multi-Tenant SaaS Platform with Project and Task Management",
-    "description": "A production-ready multi-tenant SaaS application with role-based access control, tenant isolation, projects, tasks, audit logs, and full Dockerized deployment."
-  },
-  "credentials": {
-    "super_admin": {
+  "testCredentials": {
+    "superAdmin": {
       "email": "superadmin@system.com",
       "password": "Admin@123",
+      "role": "super_admin",
+      "tenantId": null
     },
-    "tenant_admins": [
+    "tenants": [
       {
-        "email": "admin@demo.com",
-        "password": "Demo@123",
-        "tenantSubdomain": "demo",
-      },
-    ],
-    "users": [
-      {
-        "email": "user1@demo.com",
-        "password": "User@123",
-        "tenantSubdomain": "demo",
-      },
-      {
-        "email": "user2@demo.com",
-        "password": "User@123",
-        "tenantSubdomain": "demo",
+        "name": "Demo Company",
+        "subdomain": "demo",
+        "status": "active",
+        "subscriptionPlan": "pro",
+        "admin": {
+          "email": "admin@demo.com",
+          "password": "Demo@123",
+          "role": "tenant_admin"
+        },
+        "users": [
+          {
+            "email": "user1@demo.com",
+            "password": "User@123",
+            "role": "user"
+          },
+          {
+            "email": "user2@demo.com",
+            "password": "User@123",
+            "role": "user"
+          }
+        ],
+        "projects": [
+          {
+            "name": "Project Alpha",
+            "description": "First demo project"
+          },
+          {
+            "name": "Project Beta",
+            "description": "Second demo project"
+          }
+        ]
       }
     ]
-  },
-  "notes": {
-    "authentication": "All users authenticate via JWT-based login at /api/auth/login.",
-    "environment": "This submission uses development/test credentials only. No production secrets included.",
-    "docker": "Application is fully containerized and runs using docker-compose up -d."
   }
 }
+

@@ -1,142 +1,270 @@
-# Multi-Tenant SaaS Platform with Project & Task Management
+---
 
-## 1. Project Title and Description
+# Multi-Tenant SaaS Platform
 
-### Project Name
-Multi-Tenant SaaS Platform with Project and Task Management System
+A fully dockerized **Multi-Tenant SaaS Platform** built with a modern backend and frontend stack, designed to demonstrate **secure multi-tenancy, role-based access control, automatic database initialization, and containerized deployment**.
 
-### Description
-This project is a production-ready multi-tenant SaaS application that enables organizations (tenants) to manage users, projects, and tasks in a secure and scalable way. It supports strict role-based access control with Super Admin, Tenant Admin, and User roles, along with audit logging and Docker-based deployment.
-
-### Target Audience
-- SaaS startups
-- Enterprises managing multiple organizations
-- Teams needing project and task tracking
-- Developers learning multi-tenant architecture
+This project is intended for **automated evaluation** and **real-world SaaS architecture demonstration**, ensuring consistent setup using Docker.
 
 ---
 
-## 2. Features List
+## Target Audience
 
-- Multi-tenant architecture with tenant isolation
-- Role-based access control (Super Admin, Tenant Admin, User)
-- User management (create, edit, activate/deactivate, delete)
-- Tenant management with subscription plans
-- Project management per tenant
-- Task management per project
-- Audit logging for sensitive actions
-- JWT-based authentication
-- Protected frontend routes
-- Dockerized deployment with health checks
+* SaaS platform evaluators
+* Backend / Full Stack developers
+* Companies assessing multi-tenant system design
+* Students demonstrating production-ready SaaS architecture
 
 ---
 
-## 3. Technology Stack
+## Features
+
+* Multi-tenant architecture with strict tenant data isolation
+* Role-based access control (`super_admin`, `tenant_admin`, `user`)
+* Secure authentication using JWT
+* Automatic database migrations on startup
+* Automatic seed data loading on startup
+* PostgreSQL database with persistent Docker volumes
+* Fully containerized backend, frontend, and database
+* Health check endpoint for service readiness
+* Centralized API layer for frontend communication
+* Docker Compose single-command startup
+
+---
+
+##  Technology Stack
 
 ### Frontend
-- React 18
-- Vite
-- Axios
-- React Router DOM v6
-- CSS (custom styling)
+
+* React
+* Axios
+* React Router
+* Docker
 
 ### Backend
-- Node.js 18
-- Express.js
-- PostgreSQL (pg)
-- JWT Authentication
-- bcrypt
+
+* Node.js
+* Express.js
+* PostgreSQL
+* JWT Authentication
+* bcrypt (password hashing)
 
 ### Database
-- PostgreSQL 15
 
-### DevOps
-- Docker
-- Docker Compose
-- Health checks
+* PostgreSQL 15
 
----
+### DevOps & Tooling
 
-## 4. Architecture Overview
-
-### System Architecture
-The system follows a three-tier architecture:
-
-- **Frontend (React)**  
-  Handles UI, role-based rendering, and API communication.
-
-- **Backend (Node.js + Express)**  
-  Handles authentication, authorization, business logic, and audit logs.
-
-- **Database (PostgreSQL)**  
-  Stores tenants, users, projects, tasks, and audit logs.
-
-### Architecture Diagram
+* Docker
+* Docker Compose
+* Node Package Manager (npm)
 
 ---
 
-## 5. Installation & Setup
+##  Architecture Overview
+
+This application follows a **three-service architecture**:
+
+1. **Frontend** – UI layer for all users
+2. **Backend API** – Authentication, authorization, business logic
+3. **Database** – PostgreSQL with tenant-isolated data
+
+All services communicate using **Docker service names**, not `localhost`.
+
+**System Architecture Diagram**
+![System Architecture](docs/images/system-architecture.png)
+
+ **Database ERD**
+![Database ERD](docs/images/database-erd.png)
+
+---
+
+## Project Structure
+
+```
+multi-tenant-saas-platform/
+├── backend/
+│   ├── src/
+│   ├── migrations/
+│   ├── seeds/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── package-lock.json
+│   └── .env.example
+│
+├── frontend/
+│   ├── src/
+│   ├── Dockerfile
+│   ├── package.json
+│   └── package-lock.json
+│
+├── docs/
+│   ├── research.md
+│   ├── PRD.md
+│   ├── architecture.md
+│   ├── technical-spec.md
+│   ├── API.md
+│   └── images/
+│
+├── submission.json
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+##  Dockerized Setup (MANDATORY)
 
 ### Prerequisites
-- Node.js v18 or higher
-- Docker & Docker Compose
-- Git
 
-### Steps (Docker)
+* Docker
+* Docker Compose
+
+---
+
+###  Run the Application (Single Command)
 
 ```bash
-git clone https://github.com/KrishnaTulasiSatti/Multi-Tenant-Saas-Platform.git
-cd Multi-Tenant-SaaS-Platform
 docker-compose up -d
 ```
 
-Verify
-```bash
-docker-compose ps
+This command will:
+
+* Start PostgreSQL (`database`)
+* Start Backend API (`backend`)
+* Start Frontend (`frontend`)
+* Automatically run database migrations
+* Automatically load seed data
+
+ **No manual commands are required**
+
+---
+
+##  Fixed Port Mappings
+
+| Service  | External Port | Internal Port |
+| -------- | ------------- | ------------- |
+| Database | 5432          | 5432          |
+| Backend  | 5000          | 5000          |
+| Frontend | 3000          | 3000          |
+
+---
+
+## Application Access
+
+* Frontend: **[http://localhost:3000](http://localhost:3000)**
+* Backend Health Check: **[http://localhost:5000/api/health](http://localhost:5000/api/health)**
+
+Expected health check response:
+
+```json
+{
+  "status": "ok",
+  "database": "connected"
+}
 ```
 
-### Access
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-- Health Check: http://localhost:5000/api/health
+---
 
-## 6. Environment Variables
-See backend/.env
-```env
-NODE_ENV=development
-PORT=5000
-DATABASE_URL=postgres://postgres:postgres@database:5432/saas_db
-JWT_SECRET=supersecretjwtkey
-JWT_EXPIRES_IN=24h
+## Environment Variables
+
+All required environment variables are defined **directly in `docker-compose.yml`** to support automated evaluation.
+
+### Backend Variables
+
+| Variable     | Purpose                 |
+| ------------ | ----------------------- |
+| DB_HOST      | Database service name   |
+| DB_PORT      | Database port           |
+| DB_NAME      | Database name           |
+| DB_USER      | Database user           |
+| DB_PASSWORD  | Database password       |
+| JWT_SECRET   | JWT signing secret      |
+| FRONTEND_URL | Allowed frontend origin |
+
+### Frontend Variables
+
+| Variable          | Purpose              |
+| ----------------- | -------------------- |
+| REACT_APP_API_URL | Backend API base URL |
+
+---
+
+##  Database Initialization (Automatic)
+
+✔ Database migrations run automatically on backend startup
+✔ Seed data loads automatically after migrations
+✔ No manual scripts or commands required
+
+Seed data includes:
+
+* 1 Super Admin
+* 1 Tenant with Tenant Admin
+* At least 1 User per tenant
+* At least 1 Project per tenant
+* At least 1 Task per project
+
+---
+
+##  Test Credentials
+
+All test credentials are documented in:
+
 ```
-See frontend/.env
-```env
-VITE_API_URL=http://localhost:5000/api
+submission.json
 ```
 
-### Purpose
-- Database connection
-- JWT authentication
+The evaluation script uses **exact credentials** from this file.
 
+---
 
-## 7. API Documentation
-API documentation is available in:
-[API.md file](./docs/API.md)
+##  API Documentation
 
-It includes:
-- All APIs
-- Authentication details
-- Request/response examples
+Complete API documentation is available here:
 
-### Health Check
-```http
-GET /api/health
-```
-Returns 200 od when backend is ready.
+*  `docs/API.md`
+* OR Swagger/Postman (if applicable)
 
-| Role         | Email                                                 | Password     |
-| ------------ | ----------------------------------------------------- | -------------|
-| Super Admin  | [superadmin@system.com](mailto:superadmin@system.com) | Admin@123    |
-| Tenant Admin | [admin@demo.com](mailto:admin@demo.com)               | Demo@123     |
-| User         | [user1@demo.com](mailto:user1@demo.com)               | User@123     |
-| User         | [user2@demo.com](mailto:user1@demo.com)               | User@123     |
+All **19 API endpoints** are documented with:
+
+* Method
+* Endpoint
+* Authentication
+* Request/Response examples
+
+---
+
+##  Documentation Artifacts
+
+| Document                 | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `docs/research.md`       | Multi-tenancy research & security analysis |
+| `docs/PRD.md`            | Product Requirements Document              |
+| `docs/architecture.md`   | Architecture & ERD                         |
+| `docs/technical-spec.md` | Technical setup & Docker guide             |
+| `docs/API.md`            | Complete API documentation                 |
+
+---
+
+##  Verification Checklist
+
+After running `docker-compose up -d`:
+
+* [x] All 3 services show **Up** (`docker-compose ps`)
+* [x] Health check returns **200 OK**
+* [x] Frontend loads at `http://localhost:3000`
+* [x] Login works with `submission.json` credentials
+* [x] Seed data exists in database
+
+---
+
+##  Security & Best Practices
+
+* Passwords hashed using bcrypt
+* JWT-based authentication
+* Tenant-based query filtering
+* Input validation on backend
+* Proper role-based authorization
+* Docker service isolation
+* Persistent database volumes
+# multi-tenant-saas
